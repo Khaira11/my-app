@@ -117,14 +117,15 @@ pipeline {
         }
 
         stage('Deploy to Kubernetes') {
-            steps {
-                echo "🚀 Deploying ${IMAGE_NAME} to Kubernetes cluster"
-                sh '''
-                    kubectl set image deployment/my-app-deployment my-app-container=${IMAGE_NAME} --record || true
-                    kubectl rollout status deployment/my-app-deployment || true
-                '''
-            }
-        }
+    steps {
+        echo "🚀 Deploying ${IMAGE_NAME} to Kubernetes cluster"
+        sh """
+            kubectl set image deployment/my-app-deployment my-app-container=${IMAGE_NAME} --record || true
+            kubectl rollout status deployment/my-app-deployment || true
+        """
+    }
+}
+
 
         stage('Verify Deployment') {
             steps {
