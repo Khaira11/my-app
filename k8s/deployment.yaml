@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: flask-deployment
-        image: khaira23/flask-jenkins:v1
+        image: IMAGE_PLACEHOLDER
         ports:
         - containerPort: 5000
 
