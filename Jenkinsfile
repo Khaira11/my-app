@@ -48,7 +48,7 @@ pipeline {
 stage('Apply Kubernetes Manifests') {
     steps {
         echo '📦 Applying Kubernetes manifests...'
-        withKubeConfig([credentialsId: 'your-kubeconfig-credentials-id']) {
+        withKubeConfig([credentialsId: 'k8s-credential']) {
             sh 'kubectl apply -f test-app/k8s/deployment.yaml'
             sh 'kubectl apply -f test-app/k8s/service.yaml'
         }
