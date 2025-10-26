@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_REPO = 'khaira23'
+        DOCKER_REPO = 'khaira23/flaskapp'
         DEPLOYMENT_NAME = 'flask-deployment'
         NAMESPACE = 'default'
     }
