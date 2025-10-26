@@ -45,15 +45,22 @@ pipeline {
         }
 
 
-stage('Apply Kubernetes Manifests') {
-    steps {
-        echo '📦 Applying Kubernetes manifests...'
-        withKubeConfig([credentialsId: 'k8s-credential']) {
-            sh 'kubectl apply -f k8s/deployment.yaml'
-            sh 'kubectl apply -f k8s/service.yaml'
+ stage('Deploy to Kubernetes') {
+            steps {
+                echo '☸️ Deploying application to Kubernetes...'
+                withKubeConfig([credentialsId: 'k8s-credential']) {
+                    sh '''
+                        # Apply Deployment and Service files
+                        kubectl apply -f k8s/deployment.yaml
+                        kubectl apply -f k8s/service.yaml
+
+                        # Optional: Wait for rollout to complete
+                        kubectl rollout status deployment/$DEPLOYMENT_NAME -n $NAMESPACE
+                    '''
+                }
+            }
         }
-    }
-}
+
 
         stage('Update Kubernetes Deployment') {
             steps {
