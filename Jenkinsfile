@@ -12,14 +12,10 @@ pipeline {
         stage('Set Version Tag') {
             steps {
                 script {
-                    // Properly declare variables
                     def version = "v${BUILD_NUMBER}"
                     def imageName = "${DOCKER_REPO}:${version}"
-
-                    // Export them for next stages
                     env.VERSION = version
                     env.IMAGE_NAME = imageName
-
                     echo "🧾 New Image Version: ${env.IMAGE_NAME}"
                 }
             }
@@ -44,47 +40,19 @@ pipeline {
             }
         }
 
-
- stage('Deploy to Kubernetes') {
+        stage('Deploy to Kubernetes') {
             steps {
                 echo '☸️ Deploying application to Kubernetes...'
                 withKubeConfig([credentialsId: 'k8s-credential']) {
-
-echo "🔧 Preparing deployment file..."
-                sed 's|IMAGE_PLACEHOLDER|${IMAGE_NAME}|g'stage('Deploy to Kubernetes') {
-            steps {
-                echo '☸️ Deploying application to Kubernetes...'
-                withKubeConfig([credentialsId: 'k8s-credential']) {
-
-stage('Deploy to Kubernetes') {
-    steps {
-        echo '☸️ Deploying application to Kubernetes...'
-        withKubeConfig([credentialsId: 'k8s-credential']) {
-            echo "🔧 Preparing deployment file..."
-
-            // ✅ Run sed inside a shell block
-            sh """
-                sed 's|IMAGE_PLACEHOLDER|${IMAGE_NAME}|g' k8s/deployment.yaml > k8s/deployment-temp.yaml
-            """
-
-            sh '''
-                # Apply Deployment and Service files
-                kubectl apply -f k8s/deployment-temp.yaml
-                kubectl apply -f k8s/service.yaml
-
-                # Optional: Wait for rollout to complete
-                kubectl rollout status deployment/$DEPLOYMENT_NAME -n $NAMESPACE
-            '''
-        }
-    }
-}
-
-
- k8s/deployment.yaml > k8s/deployment-temp.yaml
+                    echo "🔧 Preparing deployment file..."
+                    
+                    sh """
+                        sed 's|IMAGE_PLACEHOLDER|${IMAGE_NAME}|g' k8s/deployment.yaml > k8s/deployment-temp.yaml
+                    """
 
                     sh '''
                         # Apply Deployment and Service files
-                        kubectl apply -f k8s/deployment.yaml
+                        kubectl apply -f k8s/deployment-temp.yaml
                         kubectl apply -f k8s/service.yaml
 
                         # Optional: Wait for rollout to complete
@@ -93,7 +61,6 @@ stage('Deploy to Kubernetes') {
                 }
             }
         }
-
 
         stage('Update Kubernetes Deployment') {
             steps {
