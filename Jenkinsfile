@@ -2,74 +2,74 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_HUB_CREDENTIALS = 'docker-hub-credentials'
-        DOCKER_USER = 'khaira23'
-        APP_NAME = 'my-app'
-        APP_VERSION = 'v1.0'
-        IMAGE_NAME = "${DOCKER_USER}/${APP_NAME}:${APP_VERSION}"
+        DOCKER_REPO = 'khaira23/flask-jenkins'
+        DEPLOYMENT_NAME = 'flask-deployment'
+        NAMESPACE = 'default'
     }
 
     stages {
 
-        stage('Checkout Code') {
+        stage('Set Version Tag') {
             steps {
-                echo "📥 Checking out source code from GitHub"
-                checkout scm
+                script {
+                    // Generate a version tag based on build number or timestamp
+                    VERSION = "v${BUILD_NUMBER}"
+                    IMAGE_NAME = "${DOCKER_REPO}:${VERSION}"
+                    echo "🧾 New Image Version: ${IMAGE_NAME}"
+                }
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                echo "🔨 Building Docker image: ${IMAGE_NAME}"
-                sh """
-                    export DOCKER_CLIENT_TIMEOUT=300
-                    export COMPOSE_HTTP_TIMEOUT=300
-                    export DOCKER_BUILDKIT=1
-                    docker build -t ${IMAGE_NAME} .
-                """
+                echo '🔨 Building Docker image...'
+                sh 'docker build -t $IMAGE_NAME .'
             }
         }
 
         stage('Login & Push to DockerHub') {
             steps {
-                echo "📦 Logging in and pushing image to DockerHub"
-                withCredentials([usernamePassword(credentialsId: "${docker-hub-credentials}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh """
-                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                        docker push ${IMAGE_NAME}
-                        docker logout
-                    """
+                echo '🔐 Logging in to DockerHub...'
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                    sh '''
+                        echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+                        docker push $IMAGE_NAME
+                    '''
                 }
             }
         }
 
-        stage('Deploy to Kubernetes') {
+        stage('Update Kubernetes Deployment') {
             steps {
-                echo "🚀 Deploying ${IMAGE_NAME} to Kubernetes"
-                sh """
-                    kubectl set image deployment/my-app-deployment my-app-container=${IMAGE_NAME} --record || true
-                    kubectl rollout status deployment/my-app-deployment || true
-                """
+                echo '☸️ Updating deployment in Kubernetes...'
+                withKubeConfig([credentialsId: 'k8s-credential']) {
+                    sh '''
+                        # Update the deployment image with the new version
+                        kubectl set image deployment/$DEPLOYMENT_NAME $DEPLOYMENT_NAME=$IMAGE_NAME -n $NAMESPACE
+                        
+                        # Wait for rollout to complete
+                        kubectl rollout status deployment/$DEPLOYMENT_NAME -n $NAMESPACE
+                    '''
+                }
             }
         }
 
         stage('Verify Deployment') {
             steps {
-                echo "🔍 Checking Kubernetes resources..."
-                sh """
-                    kubectl get pods -o wide
-                    kubectl get svc
-                """
+                echo '🔍 Verifying Kubernetes deployment...'
+                withKubeConfig([credentialsId: 'k8s-credential']) {
+                    sh '''
+                        kubectl get pods -n $NAMESPACE
+                        kubectl get svc -n $NAMESPACE
+                    '''
+                }
             }
         }
     }
 
     post {
         always {
-            echo "🎉 Pipeline execution completed"
-        }
-        failure {
-            echo "❌ Pipeline failed — check logs above."
+            echo '🎉 Pipeline execution completed successfully.'
         }
     }
 }
