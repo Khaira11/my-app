@@ -51,7 +51,36 @@ pipeline {
                 withKubeConfig([credentialsId: 'k8s-credential']) {
 
 echo "🔧 Preparing deployment file..."
+                sed 's|IMAGE_PLACEHOLDER|${IMAGE_NAME}|g'stage('Deploy to Kubernetes') {
+            steps {
+                echo '☸️ Deploying application to Kubernetes...'
+                withKubeConfig([credentialsId: 'k8s-credential']) {
+
+stage('Deploy to Kubernetes') {
+    steps {
+        echo '☸️ Deploying application to Kubernetes...'
+        withKubeConfig([credentialsId: 'k8s-credential']) {
+            echo "🔧 Preparing deployment file..."
+
+            // ✅ Run sed inside a shell block
+            sh """
                 sed 's|IMAGE_PLACEHOLDER|${IMAGE_NAME}|g' k8s/deployment.yaml > k8s/deployment-temp.yaml
+            """
+
+            sh '''
+                # Apply Deployment and Service files
+                kubectl apply -f k8s/deployment-temp.yaml
+                kubectl apply -f k8s/service.yaml
+
+                # Optional: Wait for rollout to complete
+                kubectl rollout status deployment/$DEPLOYMENT_NAME -n $NAMESPACE
+            '''
+        }
+    }
+}
+
+
+ k8s/deployment.yaml > k8s/deployment-temp.yaml
 
                     sh '''
                         # Apply Deployment and Service files
