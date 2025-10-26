@@ -49,8 +49,8 @@ stage('Apply Kubernetes Manifests') {
     steps {
         echo '📦 Applying Kubernetes manifests...'
         withKubeConfig([credentialsId: 'k8s-credential']) {
-            sh 'kubectl apply -f /root/test-app/k8s/deployment.yaml'
-            sh 'kubectl apply -f /root/test-app/k8s/service.yaml'
+            sh 'kubectl apply -f k8s/deployment.yaml'
+            sh 'kubectl apply -f k8s/service.yaml'
         }
     }
 }
