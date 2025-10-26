@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_REPO = 'khaira23/flaskapp'
+        DOCKER_REPO = 'khaira23/flask-jenkins'
         DEPLOYMENT_NAME = 'flask-deployment'
         NAMESPACE = 'default'
     }
@@ -12,10 +12,15 @@ pipeline {
         stage('Set Version Tag') {
             steps {
                 script {
-                    // Generate a version tag based on build number or timestamp
-                    VERSION = "v${BUILD_NUMBER}"
-                    IMAGE_NAME = "${DOCKER_REPO}:${VERSION}"
-                    echo "🧾 New Image Version: ${IMAGE_NAME}"
+                    // Properly declare variables
+                    def version = "v${BUILD_NUMBER}"
+                    def imageName = "${DOCKER_REPO}:${version}"
+
+                    // Export them for next stages
+                    env.VERSION = version
+                    env.IMAGE_NAME = imageName
+
+                    echo "🧾 New Image Version: ${env.IMAGE_NAME}"
                 }
             }
         }
@@ -44,10 +49,7 @@ pipeline {
                 echo '☸️ Updating deployment in Kubernetes...'
                 withKubeConfig([credentialsId: 'k8s-credential']) {
                     sh '''
-                        # Update the deployment image with the new version
                         kubectl set image deployment/$DEPLOYMENT_NAME $DEPLOYMENT_NAME=$IMAGE_NAME -n $NAMESPACE
-                        
-                        # Wait for rollout to complete
                         kubectl rollout status deployment/$DEPLOYMENT_NAME -n $NAMESPACE
                     '''
                 }
