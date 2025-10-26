@@ -51,7 +51,7 @@ pipeline {
                 withKubeConfig([credentialsId: 'k8s-credential']) {
 
 echo "🔧 Preparing deployment file..."
-                sed "s|IMAGE_PLACEHOLDER|${IMAGE_NAME}|g" k8s/deployment.yaml > k8s/deployment-temp.yaml
+                sed 's|IMAGE_PLACEHOLDER|${IMAGE_NAME}|g' k8s/deployment.yaml > k8s/deployment-temp.yaml
 
                     sh '''
                         # Apply Deployment and Service files
