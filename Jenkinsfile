@@ -44,6 +44,17 @@ pipeline {
             }
         }
 
+
+stage('Apply Kubernetes Manifests') {
+    steps {
+        echo '📦 Applying Kubernetes manifests...'
+        withKubeConfig([credentialsId: 'your-kubeconfig-credentials-id']) {
+            sh 'kubectl apply -f test-app/k8s/deployment.yaml'
+            sh 'kubectl apply -f test-app/k8s/service.yaml'
+        }
+    }
+}
+
         stage('Update Kubernetes Deployment') {
             steps {
                 echo '☸️ Updating deployment in Kubernetes...'
