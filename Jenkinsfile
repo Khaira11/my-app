@@ -2,94 +2,62 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_REPO = 'khaira23/flask-jenkins'
-        DEPLOYMENT_NAME = 'flask-deployment'
-        NAMESPACE = 'default'
+        REGISTRY = "docker.io/khaira11"         // Your Docker Hub username
+        IMAGE_NAME = "my-python-app"
+        GIT_BRANCH = "main"
+        KUBE_DEPLOYMENT = "python-app-deployment"
+        KUBE_NAMESPACE = "default"
+    }
+
+    triggers {
+        githubPush()  // Automatically triggers when code is pushed to GitHub
     }
 
     stages {
-
-        stage('Set Version Tag') {
+        stage('Checkout') {
             steps {
-                script {
-                    def version = "v${BUILD_NUMBER}"
-                    def imageName = "${DOCKER_REPO}:${version}"
-                    env.VERSION = version
-                    env.IMAGE_NAME = imageName
-                    echo "🧾 New Image Version: ${env.IMAGE_NAME}"
-                }
+                git branch: "${GIT_BRANCH}", url: 'https://github.com/Khaira11/my-app.git'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                echo '🔨 Building Docker image...'
-                sh 'docker build -t $IMAGE_NAME .'
+                script {
+                    IMAGE_TAG = "${env.BUILD_NUMBER}"
+                    sh "docker build -t ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} ."
+                }
             }
         }
 
-        stage('Login & Push to DockerHub') {
+        stage('Push Image to Docker Hub') {
             steps {
-                echo '🔐 Logging in to DockerHub...'
-                withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
-                    sh '''
-                        echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-                        docker push $IMAGE_NAME
-                    '''
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh """
+                    echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                    docker push ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+                    """
                 }
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                echo '☸️ Deploying application to Kubernetes...'
-                withKubeConfig([credentialsId: 'k8s-credential']) {
-                    echo "🔧 Preparing deployment file..."
-                    
+                script {
                     sh """
-                        sed 's|IMAGE_PLACEHOLDER|${IMAGE_NAME}|g' k8s/deployment.yaml > k8s/deployment-temp.yaml
+                    kubectl set image deployment/${KUBE_DEPLOYMENT} ${IMAGE_NAME}=${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} -n ${KUBE_NAMESPACE}
+                    kubectl rollout status deployment/${KUBE_DEPLOYMENT} -n ${KUBE_NAMESPACE}
                     """
-
-                    sh '''
-                        # Apply Deployment and Service files
-                        kubectl apply -f k8s/deployment-temp.yaml
-                        kubectl apply -f k8s/service.yaml
-
-                        # Optional: Wait for rollout to complete
-                        kubectl rollout status deployment/$DEPLOYMENT_NAME -n $NAMESPACE
-                    '''
-                }
-            }
-        }
-
-        stage('Update Kubernetes Deployment') {
-            steps {
-                echo '☸️ Updating deployment in Kubernetes...'
-                withKubeConfig([credentialsId: 'k8s-credential']) {
-                    sh '''
-                        kubectl set image deployment/$DEPLOYMENT_NAME $DEPLOYMENT_NAME=$IMAGE_NAME -n $NAMESPACE
-                        kubectl rollout status deployment/$DEPLOYMENT_NAME -n $NAMESPACE
-                    '''
-                }
-            }
-        }
-
-        stage('Verify Deployment') {
-            steps {
-                echo '🔍 Verifying Kubernetes deployment...'
-                withKubeConfig([credentialsId: 'k8s-credential']) {
-                    sh '''
-                        kubectl get pods -n $NAMESPACE
-                        kubectl get svc -n $NAMESPACE
-                    '''
                 }
             }
         }
     }
 
     post {
-        always {
-            echo '🎉 Pipeline execution completed successfully.'
+        success {
+            echo "✅ Deployment successful!"
+        }
+        failure {
+            echo "❌ Deployment failed."
         }
     }
 }
