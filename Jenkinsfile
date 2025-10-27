@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        REGISTRY = "docker.io/khaira11"         // Your Docker Hub username
+        REGISTRY = "docker.io/khaira23"         // Your Docker Hub username
         IMAGE_NAME = "my-python-app"
         GIT_BRANCH = "main"
         KUBE_DEPLOYMENT = "python-app-deployment"
