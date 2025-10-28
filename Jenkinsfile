@@ -40,7 +40,7 @@ pipeline {
             }
         }
 
-         stage('Deploy to Kubernetes') {
+        stage('Deploy to Kubernetes') {
             steps {
                 echo '☸️ Deploying application to Kubernetes...'
                 withKubeConfig([credentialsId: 'k8s-credential']) {
@@ -50,12 +50,12 @@ pipeline {
                         kubectl apply -f k8s/service.yaml
 
                         # Optional: Wait for rollout to complete
-                        kubectl rollout status deployment/$DEPLOYMENT_NAME -n $NAMESPACE
+                        kubectl rollout status deployment/$KUBE_DEPLOYMENT -n $KUBE_NAMESPACE
                     '''
                 }
             }
         }
-
+    }
 
     post {
         success {
