@@ -23,4 +23,34 @@ Script started on 2025-10-28 14:40:45+05:30 [TERM="xterm" TTY="/dev/pts/0" COLUM
 [1;31r[29;1H                withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DD[30;1HOCKER[?25h[?25l_USER', passwordVariable: 'DOCKER_PASS')]) {[30;19H[?25h[?25l[1;30r[30;1H
 [1;31r[30;21Hsh """[28C[?25h[?25l[1;30r[30;1H
 [1;31r[30;21Hecho "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin[30;28H[?25h[?25l[1;30r[30;1H
-[1;31r[30;21Hdocker push ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}[30;20H[?2
+[1;31r[30;21Hdocker push ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}[30;20H[?25h[?25l[1;30r[30;1H
+[1;31r[30;21H"""[30;16H[?25h[?25l[1;30r[1;1H[5M[1;31r[26;17H}[27;13H}[28;9H}[30;9Hstage('Deploy to Kubernetes') {[30;19H[?25h[?25l[1;30r[1;1H[2M[1;31r[29;13Hsteps {[30;17Hecho '☸️[30;25HDeploying application to Kubernetes...'[30;13H[?25h[?25l[1;30r[30;1H
+[1;31r[30;17HwithKubeConfig([credentialsId: 'k8s-credential']) {[30;8H[?25h[?25l[1;30r[30;1H
+[1;31r[30;21Hsh '''[17C[?25h[?25l[1;30r[30;1H
+[1;31r[30;25H# Apply Deployment and Service files[30;46H[?25h[?25l[1;30r[30;1H
+[1;31r[30;25Hkubectl apply -f k8s/deployment.yaml[30;48H[?25h[?25l[1;30r[30;1H
+[1;31r[30;25Hkubectl apply -f k8s/service.yaml[?25h[?25l[1;30r[1;1H[2M[1;31r[30;25H# Optional: Wait for rollout to complete[30;50H[?25h[?25l[1;30r[30;1H
+[1;31r[30;25Hkubectl rollout status deployment/$KUBE_DEPLOYMENT -n $KUBE_NAMESPACE[30;19H[?25h[?25l[1;30r[30;1H
+[1;31r[30;21H'''[30;9H[?25h[?25l[1;30r[1;1H[6M[1;31r[25;17H}[26;13H}[27;9H}
+    }[30;5Hpost {[31C[?25h[?25l[1;30r[1;1H[2M[1;31r[29;9Hsuccess {[30;13Hecho "✅[30;22HDeployment successful!"[30;31H[?25h[?25l[31;1H[K[1;30r[1;1H[7M[1;31r[24;9H}[25;9Hfailure {[26;13Hecho "❌[26;22HDeployment failed."[27;9H}
+    }
+}[31;94H69,0-1[8CBot[30;1H[?25h[?25l[31;84H^[[30;1H[31;84H  [30;1H[31;84H^[[30;1H[31;84H  [30;1H[?25h[?25l[31;84H:[30;1H[31;84H[K[31;1H:[?25hwq[?25l[?2004l[>4;m"Jenkinsfile" 69L, 2097B written[23;2t[23;1t
+[?1004l[?2004l[?1l>[?25h[>4;m[?1049l[23;0;0t[?2004h]0;root@jenkins: ~/test-approot@jenkins:~/test-app# git adcd [K[K[Kd .
+[?2004l[?2004h]0;root@jenkins: ~/test-approot@jenkins:~/test-app# git commit -m "Jenkins"
+[?2004l[main 434e603] Jenkins
+ 2 files changed, 29 insertions(+), 3 deletions(-)
+ create mode 100644 {
+[?2004h]0;root@jenkins: ~/test-approot@jenkins:~/test-app# git push origin main
+[?2004lEnumerating objects: 6, done.
+Counting objects:  16% (1/6)Counting objects:  33% (2/6)Counting objects:  50% (3/6)Counting objects:  66% (4/6)Counting objects:  83% (5/6)Counting objects: 100% (6/6)Counting objects: 100% (6/6), done.
+Delta compression using up to 2 threads
+Compressing objects:  25% (1/4)Compressing objects:  50% (2/4)Compressing objects:  75% (3/4)Compressing objects: 100% (4/4)Compressing objects: 100% (4/4), done.
+Writing objects:  25% (1/4)Writing objects:  50% (2/4)Writing objects:  75% (3/4)Writing objects: 100% (4/4)Writing objects: 100% (4/4), 2.19 KiB | 2.19 MiB/s, done.
+Total 4 (delta 2), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas:   0% (0/2)[Kremote: Resolving deltas:  50% (1/2)[Kremote: Resolving deltas: 100% (2/2)[Kremote: Resolving deltas: 100% (2/2), completed with 2 local objects.[K
+To https://github.com/Khaira11/my-app.git
+   9d69839..434e603  main -> main
+[?2004h]0;root@jenkins: ~/test-approot@jenkins:~/test-app# exit
+[?2004lexit
+
+Script done on 2025-10-28 14:42:46+05:30 [COMMAND_EXIT_CODE="0"]

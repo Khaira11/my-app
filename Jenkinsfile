@@ -5,7 +5,7 @@ pipeline {
         REGISTRY = "docker.io/khaira23"         // Your Docker Hub username
         IMAGE_NAME = "my-python-app"
         GIT_BRANCH = "main"
-        KUBE_DEPLOYMENT = "python-app-deployment"
+        KUBE_DEPLOYMENT = "flask-deployment"
         KUBE_NAMESPACE = "default"
     }
 
