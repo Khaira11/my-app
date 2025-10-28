@@ -40,17 +40,22 @@ pipeline {
             }
         }
 
-        stage('Deploy to Kubernetes') {
+         stage('Deploy to Kubernetes') {
             steps {
-                script {
-                    sh """
-                    kubectl set image deployment/${KUBE_DEPLOYMENT} ${IMAGE_NAME}=${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} -n ${KUBE_NAMESPACE}
-                    kubectl rollout status deployment/${KUBE_DEPLOYMENT} -n ${KUBE_NAMESPACE}
-                    """
+                echo '☸️ Deploying application to Kubernetes...'
+                withKubeConfig([credentialsId: 'k8s-credential']) {
+                    sh '''
+                        # Apply Deployment and Service files
+                        kubectl apply -f k8s/deployment.yaml
+                        kubectl apply -f k8s/service.yaml
+
+                        # Optional: Wait for rollout to complete
+                        kubectl rollout status deployment/$DEPLOYMENT_NAME -n $NAMESPACE
+                    '''
                 }
             }
         }
-    }
+
 
     post {
         success {
