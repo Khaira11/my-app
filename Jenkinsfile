@@ -2,55 +2,54 @@ pipeline {
     agent any
 
     environment {
-        REGISTRY = "docker.io/khaira23"         // Your Docker Hub username
-        IMAGE_NAME = "my-python-app"
-        GIT_BRANCH = "main"
+        REGISTRY = "docker.io"
+        IMAGE_NAME = "khaira23/my-python-app"
+        IMAGE_TAG = "build-${BUILD_NUMBER}"  // unique tag per build
+        DEPLOYMENT_FILE = "k8s/deployment.yaml"
         KUBE_DEPLOYMENT = "flask-deployment"
         KUBE_NAMESPACE = "default"
     }
 
-    triggers {
-        githubPush()  // Automatically triggers when code is pushed to GitHub
-    }
-
     stages {
-        stage('Checkout') {
+        stage('Checkout Code') {
             steps {
-                git branch: "${GIT_BRANCH}", url: 'https://github.com/Khaira11/my-app.git'
+                git branch: 'main', url: 'https://github.com/Khaira11/my-app.git'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    IMAGE_TAG = "${env.BUILD_NUMBER}"
-                    sh "docker build -t ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} ."
-                }
+                sh '''
+                echo "🏗️ Building Docker image..."
+                docker build -t ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} .
+                '''
             }
         }
 
-        stage('Push Image to Docker Hub') {
+        stage('Push to Docker Hub') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh """
-                    echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                withCredentials([string(credentialsId: 'dockerhub-pass', variable: 'DOCKER_PASS')]) {
+                    sh '''
+                    echo "$DOCKER_PASS" | docker login -u khaira23 --password-stdin ${REGISTRY}
                     docker push ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
-                    """
+                    docker logout ${REGISTRY}
+                    '''
                 }
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                echo '☸️ Deploying application to Kubernetes...'
                 withKubeConfig([credentialsId: 'k8s-credential']) {
                     sh '''
-                        # Apply Deployment and Service files
-                        kubectl apply -f k8s/deployment.yaml
-                        kubectl apply -f k8s/service.yaml
+                    echo "🚀 Deploying application to Kubernetes..."
+                    
+                    # Replace the image placeholder dynamically
+                    sed -i "s|IMAGE_PLACEHOLDER|${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}|g" ${DEPLOYMENT_FILE}
 
-                        # Optional: Wait for rollout to complete
-                        kubectl rollout status deployment/$KUBE_DEPLOYMENT -n $KUBE_NAMESPACE
+                    # Apply deployment
+                    kubectl apply -f ${DEPLOYMENT_FILE}
+                    kubectl rollout status deployment/${KUBE_DEPLOYMENT} -n ${KUBE_NAMESPACE}
                     '''
                 }
             }
@@ -58,11 +57,8 @@ pipeline {
     }
 
     post {
-        success {
-            echo "✅ Deployment successful!"
-        }
-        failure {
-            echo "❌ Deployment failed."
+        always {
+            echo "✅ Pipeline completed. Build number: ${BUILD_NUMBER}"
         }
     }
 }
